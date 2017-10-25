@@ -1,6 +1,7 @@
 import sys, os
 import numpy as np
 from numpy import *
+from sklearn.decomposition import PCA
 
 file_bbc_mtx = open("bbc/bbc.mtx", "r")
 
@@ -35,3 +36,23 @@ for row in file_bbc_classes:
 		classes.append(int(row[1]))
 
 	count_row += 1
+
+pca = PCA(n_components = 2225, svd_solver='full')
+
+new_train_data = pca.fit_transform(train_data)	# new_train_data is the new dataset with PCA applied
+'''pca_lambda = pca.explained_variance_
+
+total = 0
+for k in range(len(pca_lambda)):
+	total += pca_lambda[k]
+										
+									# Code for finding out the ideal number of components to keep
+sum_k = 0
+print len(pca_lambda)
+for k in range(len(pca_lambda)):
+	sum_k += pca_lambda[k]
+	if(sum_k/total > 0.95):
+		dim = k+1
+		break
+
+print dim'''
