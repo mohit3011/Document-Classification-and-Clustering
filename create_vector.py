@@ -39,7 +39,13 @@ for row in file_bbc_classes:
 
 pca = PCA(n_components = 2225, svd_solver='full')
 
+#print train_data[0]
 new_train_data = pca.fit_transform(train_data)	# new_train_data is the new dataset with PCA applied
+
+#print new_train_data[0]
+component_array = pca.components_	# Component array 2225 X 2225 , new axes are the linear combination of old axes
+
+
 '''pca_lambda = pca.explained_variance_
 
 total = 0
