@@ -4,6 +4,7 @@ import copy
 import math
 from numpy import *
 from sklearn.decomposition import PCA
+from sklearn.mixture import GaussianMixture
 
 Del=0.0000000001
 
@@ -82,6 +83,8 @@ print train_data[0]
 print new_train_data[0]
 print Final_train_data[0]
 component_array = pca.components_	# Component array 2225 X 9635 , new axes are the linear combination of old axes
+GMM = GaussianMixture(n_components = NoData, covariance_type='diag')
+GMM.fit(component_array,classes)
 
 
 '''pca_lambda = pca.explained_variance_
