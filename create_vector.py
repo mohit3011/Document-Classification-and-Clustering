@@ -48,14 +48,23 @@ def gmdc(final_train_data, y_train, no_classes, test_data, y_test):
 
 	estimator.fit(final_train_data)
 	y_train_pred = estimator.predict(final_train_data)
+
+	# map_index = np.array([np.argmax(np.bincount(y_train[y_train_pred == i])) for i in range(no_classes)])
+	# print map_index
+
 	y_test_pred = estimator.predict(test_data)
-	for i in range(20):
-		print y_train[i],y_train_pred[i]
+	y_test_pred_2 = y_test_pred
+	# for i in range(len(y_test_pred)):
+	# 	y_test_pred_2[i] = map_index[y_test_pred[i]]
+	# for i in range(20):
+	# 	print y_train[i],y_train_pred[i],y_test_pred_2[i]
 	train_accuracy = np.mean(y_train_pred.ravel() == y_train.ravel()) * 100
 	test_accuracy = np.mean(y_test_pred.ravel() == y_test.ravel()) * 100
+	# test_accuracy_2 = np.mean(y_test_pred_2.ravel() == y_test.ravel()) * 100
 
 	print "Training Accuracy : ", train_accuracy
 	print "Test Accuracy : ", test_accuracy
+	# print "Test 2 Accuracy : ",test_accuracy_2
 
 	return y_train_pred,y_test_pred
 
@@ -153,14 +162,13 @@ if __name__ == '__main__':
 	kf = KFold(n_splits=4, random_state=None, shuffle=True)
 	# kf.get_n_splits(final_train_data)
 	for train_index, test_index in kf.split(final_train_data):
-		train_index = np.random.shuffle(train_index)
-		test_index = np.random.shuffle(test_index)
+		# pdb.set_trace()
+		np.random.shuffle(train_index)
+		np.random.shuffle(test_index)
 		# print("TRAIN:", train_index, "TEST:", test_index)
 		X_train, X_test = final_train_data[train_index], final_train_data[test_index]
 		y_train, y_test = classes[train_index], classes[test_index]
-		pdb.set_trace()
-		for i in range(20):
-			print y_train[i]
+		# pdb.set_trace()
 		y_train_pred, y_test_pred = gmdc(X_train, y_train, no_classes, X_test, y_test)
 		pdb.set_trace()
 
