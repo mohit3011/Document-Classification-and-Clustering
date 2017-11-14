@@ -2,9 +2,11 @@ import sys, os
 import numpy as np
 import copy
 import math
+import pdb
 from numpy import *
 from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
+from sklearn.model_selection import KFold
 
 Del=0.0000000001
 
@@ -34,16 +36,28 @@ def perform_pca(new_train_data, no_samples):
 
 	component_array = pca.components_	# Component array 2225 X 9635 , new axes are the linear combination of old axes
 
-	return final_train_data, component_array 
+	return final_train_data, component_array
 
 
-def gmdc(final_train_data, classes):
+def gmdc(final_train_data, y_train, no_classes, test_data, y_test):
 
-	GMM = GaussianMixture(n_components = no_samples, covariance_type='diag')
-	GMM.fit(final_train_data, classes)
+	estimator = GaussianMixture(n_components = no_classes, covariance_type='diag')
+	# pdb.set_trace()
+	estimator.means_init = np.array([final_train_data[y_train == i].mean(axis=0)
+                                    for i in range(no_classes)])
 
-	
+	estimator.fit(final_train_data)
+	y_train_pred = estimator.predict(final_train_data)
+	y_test_pred = estimator.predict(test_data)
+	for i in range(20):
+		print y_train[i],y_train_pred[i]
+	train_accuracy = np.mean(y_train_pred.ravel() == y_train.ravel()) * 100
+	test_accuracy = np.mean(y_test_pred.ravel() == y_test.ravel()) * 100
 
+	print "Training Accuracy : ", train_accuracy
+	print "Test Accuracy : ", test_accuracy
+
+	return y_train_pred,y_test_pred
 
 def create_classes():
 
@@ -59,7 +73,7 @@ def create_classes():
 
 		count_row += 1
 
-	return classes
+	return np.asarray(classes)
 
 def create_weight_matrix(no_data, no_samples, train_data):
 
@@ -84,16 +98,16 @@ def create_normalized_data(no_data, no_samples, train_data):
 	weight_matrix = create_weight_matrix(no_data, no_samples, train_data)
 
 	for i in range(no_samples):
-		
+
 		WordSum=0
 		for j in range(no_data):
 
 			new_train_data[i,j] = weight_matrix[j]*Transform(train_data[i,j])
 
 			WordSum+=new_train_data[i,j]*new_train_data[i,j]
-		
+
 		WordSum=math.sqrt(WordSum)
-		
+
 		new_train_data[i,:]=new_train_data[i,:]/WordSum
 
 	return new_train_data
@@ -132,9 +146,22 @@ if __name__ == '__main__':
 
 	classes = []	# List having the classes for each of the document instance
 	classes = create_classes()
+	no_classes = len(np.unique(classes))
+	print no_classes
 
 	final_train_data, component_array = perform_pca(new_train_data, no_samples)
+	kf = KFold(n_splits=4, random_state=None, shuffle=True)
+	# kf.get_n_splits(final_train_data)
+	for train_index, test_index in kf.split(final_train_data):
+		train_index = np.random.shuffle(train_index)
+		test_index = np.random.shuffle(test_index)
+		# print("TRAIN:", train_index, "TEST:", test_index)
+		X_train, X_test = final_train_data[train_index], final_train_data[test_index]
+		y_train, y_test = classes[train_index], classes[test_index]
+		pdb.set_trace()
+		for i in range(20):
+			print y_train[i]
+		y_train_pred, y_test_pred = gmdc(X_train, y_train, no_classes, X_test, y_test)
+		pdb.set_trace()
 
 	#print final_train_data.shape
-
-
