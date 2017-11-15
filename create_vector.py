@@ -7,6 +7,7 @@ from numpy import *
 from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
 from sklearn.model_selection import KFold
+import matplotlib.pyplot as plt
 
 Del=0.0000000001
 
@@ -28,9 +29,9 @@ def create_word_list():
 
 	return words
 
-def perform_pca(new_train_data, no_samples):
+def perform_pca(new_train_data, num_samples):
 
-	pca = PCA(n_components = no_samples, svd_solver='full')
+	pca = PCA(n_components = num_samples, svd_solver='full')
 
 	final_train_data = pca.fit_transform(new_train_data)	# final_train_data is the new dataset with PCA applied
 
@@ -39,34 +40,29 @@ def perform_pca(new_train_data, no_samples):
 	return final_train_data, component_array
 
 
-def gmdc(final_train_data, y_train, no_classes, test_data, y_test):
+def gmdc_bic_calc(final_train_data):
 
-	estimator = GaussianMixture(n_components = no_classes, covariance_type='diag')
-	# pdb.set_trace()
-	estimator.means_init = np.array([final_train_data[y_train == i].mean(axis=0)
-                                    for i in range(no_classes)])
+	count_cluster = 1
+	cluster_list = []
+	bic_list = []
+	for num_clusters in range(1, 31):
+		estimator = GaussianMixture(n_components = num_clusters, covariance_type='diag', max_iter=250)
+		estimator.fit(final_train_data)
+		cluster_list.append(count_cluster)
+		count_cluster += 1
+		bic_list.append(estimator.bic(final_train_data))
 
-	estimator.fit(final_train_data)
-	y_train_pred = estimator.predict(final_train_data)
+	draw_graph(cluster_list, bic_list, "r", "Number of Clusters", "BIC Values")
+		
 
-	# map_index = np.array([np.argmax(np.bincount(y_train[y_train_pred == i])) for i in range(no_classes)])
-	# print map_index
+def draw_graph(x_val, y_val, color, x_label, y_label):
 
-	y_test_pred = estimator.predict(test_data)
-	y_test_pred_2 = y_test_pred
-	# for i in range(len(y_test_pred)):
-	# 	y_test_pred_2[i] = map_index[y_test_pred[i]]
-	# for i in range(20):
-	# 	print y_train[i],y_train_pred[i],y_test_pred_2[i]
-	train_accuracy = np.mean(y_train_pred.ravel() == y_train.ravel()) * 100
-	test_accuracy = np.mean(y_test_pred.ravel() == y_test.ravel()) * 100
-	# test_accuracy_2 = np.mean(y_test_pred_2.ravel() == y_test.ravel()) * 100
+	lines = plt.plot(x_val, y_val)
+	plt.setp(lines, color = color, linewidth=2.0)
+	plt.ylabel(y_label)
+	plt.xlabel(x_label)
+	plt.show()
 
-	print "Training Accuracy : ", train_accuracy
-	print "Test Accuracy : ", test_accuracy
-	# print "Test 2 Accuracy : ",test_accuracy_2
-
-	return y_train_pred,y_test_pred
 
 def create_classes():
 
@@ -84,32 +80,32 @@ def create_classes():
 
 	return np.asarray(classes)
 
-def create_weight_matrix(no_data, no_samples, train_data):
+def create_weight_matrix(num_dim, num_samples, train_data):
 
-	prob_matrix = np.zeros((no_samples, no_data))
+	prob_matrix = np.zeros((num_samples, num_dim))
 
-	weight_matrix = np.zeros((no_data))
+	weight_matrix = np.zeros((num_dim))
 
-	for j in range(no_data):
+	for j in range(num_dim):
 		prob_matrix[:,j] = np.copy(train_data[:,j]/np.sum(train_data[:,j]))
 
-	for j in range(no_data):
+	for j in range(num_dim):
 
 		tmp = np.copy(prob_matrix[:,j]*np.log(prob_matrix[:,j]+Del))
-		weight_matrix[j] = 1+np.sum(tmp)/np.log(no_samples)
+		weight_matrix[j] = 1+np.sum(tmp)/np.log(num_samples)
 
 	return weight_matrix
 
-def create_normalized_data(no_data, no_samples, train_data):
+def create_normalized_data(num_dim, num_samples, train_data):
 
-	new_train_data = np.zeros((no_samples, no_data))	# Final data matrix
+	new_train_data = np.zeros((num_samples, num_dim))	# Final data matrix
 
-	weight_matrix = create_weight_matrix(no_data, no_samples, train_data)
+	weight_matrix = create_weight_matrix(num_dim, num_samples, train_data)
 
-	for i in range(no_samples):
+	for i in range(num_samples):
 
 		WordSum=0
-		for j in range(no_data):
+		for j in range(num_dim):
 
 			new_train_data[i,j] = weight_matrix[j]*Transform(train_data[i,j])
 
@@ -127,10 +123,10 @@ def create_vectors():
 
 	count_row = 0
 
-	no_data=9635
-	no_samples=2225
+	num_dim=9635
+	num_samples=2225
 
-	train_data = np.zeros((no_samples, no_data))	# Sparse data matrix
+	train_data = np.zeros((num_samples, num_dim))	# Sparse data matrix
 
 	for row in file_bbc_mtx:
 		if count_row > 1:
@@ -140,15 +136,15 @@ def create_vectors():
 
 		count_row += 1
 
-	new_train_data = create_normalized_data(no_data, no_samples, train_data)
+	new_train_data = create_normalized_data(num_dim, num_samples, train_data)
 
-	return new_train_data, no_data, no_samples
+	return new_train_data, num_dim, num_samples
 
 
 if __name__ == '__main__':
 
 
-	new_train_data, no_data, no_samples = create_vectors()
+	new_train_data, num_dim, num_samples = create_vectors()
 
 	words = []	# List of words
 	words = create_word_list()
@@ -156,20 +152,7 @@ if __name__ == '__main__':
 	classes = []	# List having the classes for each of the document instance
 	classes = create_classes()
 	no_classes = len(np.unique(classes))
-	print no_classes
 
-	final_train_data, component_array = perform_pca(new_train_data, no_samples)
-	kf = KFold(n_splits=4, random_state=None, shuffle=True)
-	# kf.get_n_splits(final_train_data)
-	for train_index, test_index in kf.split(final_train_data):
-		# pdb.set_trace()
-		np.random.shuffle(train_index)
-		np.random.shuffle(test_index)
-		# print("TRAIN:", train_index, "TEST:", test_index)
-		X_train, X_test = final_train_data[train_index], final_train_data[test_index]
-		y_train, y_test = classes[train_index], classes[test_index]
-		# pdb.set_trace()
-		y_train_pred, y_test_pred = gmdc(X_train, y_train, no_classes, X_test, y_test)
-		pdb.set_trace()
-
-	#print final_train_data.shape
+	final_train_data, component_array = perform_pca(new_train_data, num_samples)
+	
+	#gmdc_bic_calc(final_train_data)
