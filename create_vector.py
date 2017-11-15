@@ -117,6 +117,46 @@ def create_normalized_data(num_dim, num_samples, train_data):
 
 	return new_train_data
 
+def gmdc(final_train_data, y_train, num_classes):
+
+	estimator = GaussianMixture(n_components = num_classes, covariance_type='diag')
+	estimator.fit(final_train_data)
+	y_train_pred = estimator.predict(final_train_data)
+
+	return y_train_pred
+
+def CalFMWIndex(y_train,y_train_pred,no_classes,no_data):
+	
+	FMWIndexMatrix = np.zeros((no_classes, no_classes))		# FMWIndexMatrix(True classes,Predicted)
+	Ni = np.zeros((no_classes, ))		
+	Nj = np.zeros((no_classes, ))
+
+	for i in range(no_data):
+		FMWIndexMatrix[y_train[i],y_train_pred[i]]+=1
+
+	for i in range(no_classes):
+		Ni[i]=np.sum(FMWIndexMatrix[i,:])
+		Nj[i]=np.sum(FMWIndexMatrix[:,i])
+
+	Nic2=0
+	Njc2=0
+	Nijc2=0
+
+	for i in range(no_classes):
+		Nic2+=nc2(Ni[i])
+		Njc2+=nc2(Nj[i])
+	
+	for i in range(no_classes):
+		for j in range(no_classes):
+			Nijc2+=nc2(FMWIndexMatrix[i,j])
+
+	FMWIndex=Nijc2/sqrt(Nic2*Njc2)
+	
+	return FMWIndex
+
+def nc2(n):
+	ans=n*(n-1)/2.0
+	return ans
 
 def create_vectors():
 	file_bbc_mtx = open("bbc/bbc.mtx", "r")
@@ -149,10 +189,13 @@ if __name__ == '__main__':
 	words = []	# List of words
 	words = create_word_list()
 
-	classes = []	# List having the classes for each of the document instance
-	classes = create_classes()
-	no_classes = len(np.unique(classes))
+	y_train = []	# List having the classes for each of the document instance
+	y_train = create_classes()
+	num_classes = len(np.unique(y_train))
 
 	final_train_data, component_array = perform_pca(new_train_data, num_samples)
-	
+	y_train_pred=gmdc(final_train_data,y_train, num_classes)
+
+	FMWIndex=CalFMWIndex(y_train,y_train_pred,num_classes,num_samples)
+	# print FMWIndex
 	#gmdc_bic_calc(final_train_data)
