@@ -6,11 +6,8 @@ from create_vector import *
 n_clusters = 5
 n_samples = 2225
 
-#kmeans = KMeans(n_clusters=n_clusters).fit(Final_train_data)
 
-#kmeans_labels = kmeans.labels_
-
-def cal_mean_var(final_train_data,clusters,kmeans):
+def cal_mean_var(final_train_data, clusters):
     mean_cluster_array = []
     std_cluster_array = []
     prob_cluster = []
@@ -26,6 +23,7 @@ def cal_mean_var(final_train_data,clusters,kmeans):
     return mean_cluster_array,std_cluster_array,np.asarray(prob_cluster)
 
 
+
 def create_clusters(kmeans):
     clusters = []
     for i in range (n_clusters):
@@ -38,76 +36,55 @@ def create_clusters(kmeans):
     cov_vector = np.zeros((n_clusters,n_dim_pca))
     prob_cluster = np.zeros(n_clusters)
     kmeans_labels = kmeans.labels_
-    mean_cluster_array,,std_cluster_array,prob_cluster = cal_mean_var(final_train_data,clusters,kmeans)
+    mean_cluster_array, std_cluster_array, prob_cluster = cal_mean_var(final_train_data,clusters)
 
-#### Done Editing till here
-
-clusters_itr = np.copy(clusters)
-cluster = np.copy(kmeans_labels)
-p_x = np.copy(prob_cluster)
-mean_vector_x = np.copy(mean_vector)
-cov_vector_x = np.copy(cov_vector)
-
-print "start"
-
-for i in range(10):
-	mean_vector_copy = np.copy(mean_vector_x)
-	cov_vector_copy = np.copy(cov_vector_x)
-	updates = np.copy(cluster)
-	for k in range(2225):
-		find_cluster = 0
-		prob_cluster = float("inf")
-		f = Final_train_data[k]
-		p_copy = np.copy(p_x)
-		for j in range(n_clusters):
-			if np.size(clusters[j])!=1:
-				mu = mean_vector_copy[j]
-				sig = cov_vector_copy[j]
-				#if k==1:
-				#	print p_copy[j], prob_cluster, j
-				p_copy[j]=-1*((np.log(p_copy[j]))+(np.sum(norm.logpdf(f,mu,sig))))
-				if(p_copy[j] < prob_cluster):
-					prob_cluster = p_copy[j]
-					find_cluster = j
-		updates[k] = find_cluster
-	clusters = []
-	mean_vector_x = np.zeros((n_clusters,n_dim_pca))
-	cov_vector_x = np.zeros((n_clusters,n_dim_pca))
-	p_x = np.zeros(n_clusters)
-
-	for j in range (n_clusters):
-		clusters.append([])
-
-	for j in range(2225):
-		clusters[updates[j]].append(j)
-
-	for j in range(n_clusters):
-		for k in range(n_dim_pca):
-			vec_attr = []
-			for l in range(np.size(clusters[j])):
-				vec_attr.append(Final_train_data[clusters[j][l]][k])
-			vec_attr = np.array(vec_attr)
-			mean_vector_x[j][k]=vec_attr.mean()
-			cov_vector_x[j][k]=vec_attr.std()
-		p_x[j] = (1.*np.size(clusters[j]))/2225
-
-	p_copy = p_x
-	mean_vector_copy = mean_vector_x
-	cov_vector_copy = cov_vector_x
-	cluster = updates
+	clusters_itr = np.copy(clusters)
+	kmeans_labels_itr = np.copy(kmeans_labels)
+	prob_cluster_itr = np.copy(prob_cluster)
+	mean_cluster_itr = np.copy(mean_cluster_array)
+	std_cluster_itr = np.copy(std_cluster_array)
 
 
-a = np.zeros(n_clusters)
+	for i in range(10):
+		mean_cluster_copy = np.copy(mean_cluster_itr)
+		std_cluster_copy = np.copy(std_cluster_itr)
+		updates_labels = np.copy(kmeans_labels_itr)
+		prob_cluster_copy = np.copy(prob_cluster_itr)
 
-for i in range(2225):
-	a[cluster[i]]+=1
-	print cluster[i]
+		for k in range(n_samples):
+			
+			find_cluster = 0
+			prob_cluster_max = float("inf")
+			
+			f = final_train_data[k]
+			p_copy = np.copy(prob_cluster)
+			
+			for j in range(n_clusters):
+				if np.size(clusters[j])!=1:
+					mu = mean_cluster_copy[j]
+					sig = std_cluster_copy[j]
+					
+					p_copy[j]=-1*((np.log(p_copy[j]))+(np.sum(norm.logpdf(f,mu,sig))))
+					
+					if(p_copy[j] < prob_cluster_max):
+						prob_cluster_max = p_copy[j]		#Problem maybe
+						find_cluster = j
 
-for i in range(n_clusters):
-	print a[i]
+			updates_labels[k] = find_cluster
+		
+		clusters = []
 
-#for i in range(100):
-#	cluster_points = Final_train_data[]
+		for j in range (n_clusters):
+			clusters.append([])
+
+		for j in range(2225):
+			clusters[updates_labels[j]].append(j)
+
+		mean_cluster_itr, std_cluster_itr, prob_cluster_itr = cal_mean_var(final_train_data,clusters)
+		
+		kmeans_labels_itr = updates_labels
+
+
 rand.seed(42)
 
 
