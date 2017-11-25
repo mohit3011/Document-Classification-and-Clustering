@@ -1,3 +1,5 @@
+
+
 def calc_cosine(c1,c2,n_dim_pca):
     determinant_l_D = np.prod((c1['lambda']*c1['covar_D']) + (c2['lambda']*c2['covar_D']))
     lambda_merge = (c1['lambda']*c2['lambda'])/(determinant_l_D**(1.0/n_dim_pca))
@@ -12,7 +14,7 @@ def calc_cosine(c1,c2,n_dim_pca):
     cosine_score = coefficient_term * math.exp(exponent_term)
     return cosine_score
 
-def merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,clusters):
+def merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D,clusters):
     curr_max = 0
     curr_max_pair = (-1,-1)
     for i in range(n_clusters):
@@ -22,11 +24,8 @@ def merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,clusters):
         cluster1['mean'] = mean_cluster_itr[i]
         cluster1['std'] = std_cluster_itr[i]
         cluster1['size_ng'] = int(prob_cluster_itr[i]*n_samples)
-
-        ######## TO BE DONE #######
-        cluster1['lambda'] = To_be_calcuated
-        cluster1['covar_D'] = To_be_calcuated
-        ###########################
+        cluster1['lambda'] = lambda_array[i]
+        cluster1['covar_D'] = covar_D[i]
 
         for j in range(i+1,n_clusters):
             if len(clusters[i])==0:
@@ -35,10 +34,8 @@ def merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,clusters):
             cluster2['mean'] = mean_cluster_itr[j]
             cluster2['std'] = std_cluster_itr[j]
             cluster2['size_ng'] = int(prob_cluster_itr[j]*n_samples)
-            ######## TO BE DONE #######
-            cluster2['lambda'] = To_be_calcuated
-            cluster2['covar_D'] = To_be_calcuated
-            ###########################
+            cluster2['lambda'] = lambda_array[j]
+            cluster2['covar_D'] = covar_D[j]
 
             cosine_distance = calc_cosine(cluster1,cluster2)
             if(cosine_distance >= curr_max):

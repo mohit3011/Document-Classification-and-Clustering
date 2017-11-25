@@ -27,25 +27,18 @@ def calc_likelihoodChange(cluster1,cluster2):
 
 # To be updated
 def calc_lambda_d(std_cluster_array, n_dim_pca):
-
 	lambda_array = []
 	covariance_array = []
-
 	for i in range(n_clusters):
 		temp = std_cluster_array[i] * std_cluster_array[i]
-		covariance_array.append(temp)
-
 		ans = 1
 		for element in temp:
 			ans = ans*element
 		ans = ans**(float(1)/float(n_dim_pca))
+		covariance_array.append(temp/ans)
 		lambda_array.append(ans)
 
-
-
 	return lambda_array, covariance_array
-
-
 
 def cal_mean_var(final_train_data, clusters):
     mean_cluster_array = []
@@ -118,8 +111,9 @@ def create_clusters(kmeans, n_dim_pca):
     	mean_cluster_itr, std_cluster_itr, prob_cluster_itr = cal_mean_var(final_train_data,clusters)
     	kmeans_labels_itr = updates_labels
     print "gmm labels"
-    # For functional Merging 
-    merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,clusters)
+    # For functional Merging
+    lambda_array, covar_D = calc_lambda_d(std_cluster_itr, n_dim_pca)
+    merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D,clusters)
 
     for element in kmeans_labels_itr:
     	print element
