@@ -16,10 +16,10 @@ from mergingFuntions import *
 
 n_clusters = 5
 n_samples = 2225
+n_dim_pca = 2225
 
 # lambda_array[i] : ith clusters lambda_i
 #
-
 
 # Likelihood based Merging
 def calc_likelihoodChange(cluster1,cluster2):
@@ -47,8 +47,16 @@ def cal_mean_var(final_train_data, clusters):
     for i in range(n_clusters):
         data_indices = clusters[i]
         data_cluster = final_train_data[data_indices]
-        mean_cluster = data_cluster.mean(axis=0)
-        std_cluster = data_cluster.std(axis=0)
+        try :
+            mean_cluster = data_cluster.mean(axis=0)
+        except :
+            mean_cluster = 0.0
+            print "Error Occured"
+        try :
+            std_cluster = data_cluster.std(axis=0)
+        except :
+            std_cluster = 0.0
+            print "Error Occured"
         mean_cluster_array.append(mean_cluster)
         std_cluster_array.append(std_cluster)
         prob_cluster.append((1.*np.size(clusters[i]))/n_samples)
@@ -112,8 +120,8 @@ def create_clusters(kmeans, n_dim_pca):
     	kmeans_labels_itr = updates_labels
     print "gmm labels"
     # For functional Merging
-    lambda_array, covar_D = calc_lambda_d(std_cluster_itr, n_dim_pca)
-    merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D,clusters)
+    # lambda_array, covar_D = calc_lambda_d(std_cluster_itr, n_dim_pca)
+    # merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D,clusters)
 
     for element in kmeans_labels_itr:
     	print element
@@ -135,3 +143,4 @@ if __name__ == '__main__':
 	print "k-means labels"
 	for element in kmeans_labels:
 		print element
+	clusters = completeMerging(clusters,final_train_data,n_dim_pca)

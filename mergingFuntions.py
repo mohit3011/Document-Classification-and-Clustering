@@ -1,6 +1,9 @@
+from newGMM import *
 
+n_itr_clusters = n_clusters
 
-def calc_cosine(c1,c2,n_dim_pca):
+def calc_cosine(c1,c2):
+    global n_dim_pca
     determinant_l_D = np.prod((c1['lambda']*c1['covar_D']) + (c2['lambda']*c2['covar_D']))
     lambda_merge = (c1['lambda']*c2['lambda'])/(determinant_l_D**(1.0/n_dim_pca))
     covar_D_merge = 1.0/((determinant_l_D**(1.0/n_dim_pca))*((c1['lambda']/(1.0*c1['covar_D'])) \
@@ -17,9 +20,7 @@ def calc_cosine(c1,c2,n_dim_pca):
 def merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D,clusters):
     curr_max = 0
     curr_max_pair = (-1,-1)
-    for i in range(n_clusters):
-        if len(clusters[i])== 0:
-            continue
+    for i in range(n_itr_clusters):
         cluster1 = defaultdict()
         cluster1['mean'] = mean_cluster_itr[i]
         cluster1['std'] = std_cluster_itr[i]
@@ -27,9 +28,7 @@ def merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D
         cluster1['lambda'] = lambda_array[i]
         cluster1['covar_D'] = covar_D[i]
 
-        for j in range(i+1,n_clusters):
-            if len(clusters[i])==0:
-                continue
+        for j in range(i+1,n_itr_clusters):
             cluster2 = defaultdict()
             cluster2['mean'] = mean_cluster_itr[j]
             cluster2['std'] = std_cluster_itr[j]
@@ -42,7 +41,19 @@ def merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D
                 curr_max = cosine_distance
                 curr_max_pair = (i,j)
 
-        #To merge i,j into i
-        flag[j] = 1
-        clusters[i] = np.append(clusters[i],clusters[j])
-        clusters[j] = np.array([])
+    #To merge i,j into i
+    i = curr_max_pair[0]
+    j = curr_max_pair[1]
+    clusters[i] = np.append(clusters[i],clusters[j])
+    clusters = np.append(clusters[:j],clusters[j+1:])
+    n_itr_clusters -= 1
+
+    return clusters
+
+def completeMerging(clusters,final_train_data):
+    global n_dim_pca
+    for i in range(n_mergingIteration):
+        mean_cluster_itr, std_cluster_itr, prob_cluster_itr = cal_mean_var(final_train_data,clusters)
+        lambda_array, covar_D = calc_lambda_d(std_cluster_itr)
+        clusters = merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D,clusters)
+    return clusters
