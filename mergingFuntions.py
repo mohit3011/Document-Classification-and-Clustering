@@ -1,7 +1,5 @@
 from newGMM import *
 
-n_itr_clusters = n_clusters
-
 def calc_cosine(c1,c2):
     global n_dim_pca
     determinant_l_D = np.prod((c1['lambda']*c1['covar_D']) + (c2['lambda']*c2['covar_D']))
@@ -16,8 +14,8 @@ def calc_cosine(c1,c2):
                             - np.dot(mean_merge,((1.0/(lambda_merge*covar_D_merge))*mean_merge)))
     cosine_score = coefficient_term * math.exp(exponent_term)
     return cosine_score
-
-def merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D,clusters):
+        
+def merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D,clusters,kmeans_labels,n_itr_clusters):
     curr_max = 0
     curr_max_pair = (-1,-1)
     for i in range(n_itr_clusters):
@@ -47,13 +45,17 @@ def merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D
     clusters[i] = np.append(clusters[i],clusters[j])
     clusters = np.append(clusters[:j],clusters[j+1:])
     n_itr_clusters -= 1
+    kmeans_labels[kmeans_labels==j]=i
+    kmeans_labels[kmeans_labels>j]-=1
+    
+    return clusters,kmeans_labels,n_itr_clusters
 
-    return clusters
-
-def completeMerging(clusters,final_train_data):
-    global n_dim_pca
-    for i in range(n_mergingIteration):
-        mean_cluster_itr, std_cluster_itr, prob_cluster_itr = cal_mean_var(final_train_data,clusters)
-        lambda_array, covar_D = calc_lambda_d(std_cluster_itr)
-        clusters = merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D,clusters)
-    return clusters
+# def completeMerging(clusters,final_train_data):
+#     global n_dim_pca
+#     for i in range(n_mergingIteration):
+#         mean_cluster_itr, std_cluster_itr, prob_cluster_itr = cal_mean_var(final_train_data,clusters,n_itr_clusters)
+#         lambda_array, covar_D = calc_lambda_d(std_cluster_itr,n_itr_clusters)
+#         clusters = merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D,clusters)
+#         clusters=create_clusters(kmeans, num_samples)
+#         print "EM Update done"
+#     return clusters
