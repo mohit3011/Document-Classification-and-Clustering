@@ -38,11 +38,12 @@ def permute_labels(y_train, y_predict, num_clusters):   #This function computes 
         mapping = ()
         mapping = permute_label
 
-        count_correct = 0
+        count_correct = CalFMWIndex(y_train,mapping[y_predict],num_clusters,n_samples)
 
-        for i in range(y_train.shape[0]):
-            if y_train[i] == mapping[y_predict[i]]:
-                count_correct +=1
+        # count_correct = 0
+        # for i in range(y_train.shape[0]):
+        #     if y_train[i] == mapping[y_predict[i]]:
+        #         count_correct +=1
 
         if count_correct > max_count:
             max_count = count_correct   #max count has the max_accuracy
@@ -63,9 +64,10 @@ def calc_lambda_d(std_cluster_array, n_dim_pca,n_itr_clusters):
         for element in temp:
             ans += math.log(element)
 
-        ans = (float(ans)/float(n_dim_pca))
-        covariance_array.append(temp/math.exp(ans))
-        lambda_array.append(math.exp(ans))
+        temp_lambda = (float(ans)/float(n_dim_pca))
+        covariance_array.append(temp/math.exp(temp_lambda))
+        lambda_array.append(math.exp(temp_lambda))
+    # pdb.set_trace()
     return lambda_array, covariance_array
 
 def cal_mean_var(final_train_data, clusters,n_itr_clusters):
@@ -91,7 +93,7 @@ def cal_mean_var(final_train_data, clusters,n_itr_clusters):
 
     return mean_cluster_array,std_cluster_array,np.asarray(prob_cluster)
 
-def create_clusters(kmeans, n_dim_pca, n_itr_clusters):
+def create_clusters(kmeans, n_samples, n_dim_pca, n_itr_clusters):
     clusters = []
     for i in range(n_itr_clusters):
         clusters.append([])
@@ -171,8 +173,9 @@ if __name__ == '__main__':
     y_train = []	# List having the classes for each of the document instance
     y_train = create_classes()
     num_classes = len(np.unique(y_train))
+    print "Data Read done"
     final_train_data, component_array = perform_pca(new_train_data, n_dim_pca)	#Data after pca
     print "PCA done"
     kmeans = KMeans(n_clusters=Kmeans_n_clusters).fit(final_train_data)	#k-means clustering
     # kmeans_labels = kmeans.labels_
-    clusters=create_clusters(kmeans, num_samples,Kmeans_n_clusters)
+    clusters=create_clusters(kmeans, n_samples, n_dim_pca,Kmeans_n_clusters)

@@ -1,20 +1,30 @@
 from newGMM import *
 import pdb
+import warnings
 
 def calc_cosine(c1,c2):
     global n_dim_pca
-    determinant_l_D=np.linalg.det(np.diag(c1['lambda']*c1['covar_D'] + c2['lambda']*c2['covar_D']))
-    lambda_merge = (c1['lambda']*c2['lambda'])/(determinant_l_D**(1.0/n_dim_pca))
-    covar_D_merge = 1.0/((determinant_l_D**(1.0/n_dim_pca))*((c1['lambda']/(1.0*c1['covar_D'])) \
+    Q=np.log(c1['lambda']*c1['covar_D'] + c2['lambda']*c2['covar_D'])
+    logDet=np.sum(Q)
+    Logdeterminant_l_D=logDet*(1.0/n_dim_pca)
+    determinant_l_D=np.exp(Logdeterminant_l_D)
+    flag=0
+    if (determinant_l_D==0):
+        flag=1
+    lambda_merge = (c1['lambda']*c2['lambda'])/(determinant_l_D)
+    covar_D_merge = 1.0/((determinant_l_D)*((c1['lambda']/(1.0*c1['covar_D'])) \
                                             + (c2['lambda']/(1.0*c2['covar_D']))))
     mean_merge = lambda_merge*covar_D_merge*(((1.0/(c1['lambda']*c1['covar_D']))*c1['mean']) \
                                             + (((1.0/(c2['lambda']*c2['covar_D']))*c2['mean'])))
-    coefficient_term = (((c1['lambda'])**(n_dim_pca*0.25))*((c2['lambda'])**(n_dim_pca*0.25)))/(determinant_l_D**0.5)
+    coefficient_term = math.log(((c1['lambda'])**(n_dim_pca*0.25))*((c2['lambda'])**(n_dim_pca*0.25)))-(logDet*0.5)
     exponent_term = -0.5*(np.dot(c1['mean'],((1.0/(c1['lambda']*c1['covar_D']))*c1['mean'])) \
                             + np.dot(c2['mean'],(((1.0/(c2['lambda']*c2['covar_D']))*c2['mean']))) \
                             - np.dot(mean_merge,((1.0/(lambda_merge*covar_D_merge))*mean_merge)))
     
-    cosine_score = exponent_term + math.log(coefficient_term)
+    # warnings.filterwarnings('error')
+    if (flag):
+        pdb.set_trace()
+    cosine_score = exponent_term + coefficient_term
     return cosine_score
         
 def merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D,clusters,kmeans_labels,n_itr_clusters):
