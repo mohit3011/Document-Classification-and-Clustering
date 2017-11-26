@@ -16,8 +16,8 @@ from mergingFuntions import *
 
 n_clusters = 5
 n_samples = 2225
-n_dim_pca = 10
-Kmeans_n_clusters=10
+n_dim_pca = 100
+Kmeans_n_clusters=50
 n_EM_Update=10
 n_mergingIteration=Kmeans_n_clusters-n_clusters
 
@@ -35,14 +35,13 @@ def calc_lambda_d(std_cluster_array, n_dim_pca,n_itr_clusters):
     covariance_array = []
     for i in range(n_itr_clusters):
         temp = std_cluster_array[i] * std_cluster_array[i]
-        ans = 1.0
+        ans = 0
         for element in temp:
-            ans = ans*element
+            ans += math.log(element)
 
-        ans = ans**(float(1)/float(n_dim_pca))
-        covariance_array.append(temp/ans)
-        lambda_array.append(ans)
-
+        ans = (float(ans)/float(n_dim_pca))
+        covariance_array.append(temp/math.exp(ans))
+        lambda_array.append(math.exp(ans))
     return lambda_array, covariance_array
 
 def cal_mean_var(final_train_data, clusters,n_itr_clusters):
@@ -126,12 +125,13 @@ def create_clusters(kmeans, n_dim_pca, n_itr_clusters):
         kmeans_labels_itr = updates_labels
         print "EM Update done"
         kmeans_labels = kmeans_labels_itr
-        print mean_cluster_itr, std_cluster_itr, prob_cluster_itr
+        # print mean_cluster_itr, std_cluster_itr, prob_cluster_itr
         lambda_array, covar_D = calc_lambda_d(std_cluster_itr,n_dim_pca,n_itr_clusters)
         print "D & lambda Done"
         clusters,kmeans_labels,n_itr_clusters = merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D,clusters,kmeans_labels,n_itr_clusters)
         mean_cluster, std_cluster, prob_cluster = cal_mean_var(final_train_data,clusters,n_itr_clusters)
         print "Merging Done"
+        # pdb.set_trace()
     
     return clusters
 

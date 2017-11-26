@@ -1,22 +1,24 @@
 from newGMM import *
+import pdb
 
 def calc_cosine(c1,c2):
     global n_dim_pca
-    determinant_l_D = np.prod((c1['lambda']*c1['covar_D']) + (c2['lambda']*c2['covar_D']))
+    determinant_l_D=np.linalg.det(np.diag(c1['lambda']*c1['covar_D'] + c2['lambda']*c2['covar_D']))
     lambda_merge = (c1['lambda']*c2['lambda'])/(determinant_l_D**(1.0/n_dim_pca))
     covar_D_merge = 1.0/((determinant_l_D**(1.0/n_dim_pca))*((c1['lambda']/(1.0*c1['covar_D'])) \
                                             + (c2['lambda']/(1.0*c2['covar_D']))))
     mean_merge = lambda_merge*covar_D_merge*(((1.0/(c1['lambda']*c1['covar_D']))*c1['mean']) \
                                             + (((1.0/(c2['lambda']*c2['covar_D']))*c2['mean'])))
-    coefficient_term = (((c1['lambda']*2)**(n_dim_pca*0.25))*((c2['lambda']*2)**(n_dim_pca*0.25)))/(determinant_l_D**0.5)
+    coefficient_term = (((c1['lambda'])**(n_dim_pca*0.25))*((c2['lambda'])**(n_dim_pca*0.25)))/(determinant_l_D**0.5)
     exponent_term = -0.5*(np.dot(c1['mean'],((1.0/(c1['lambda']*c1['covar_D']))*c1['mean'])) \
                             + np.dot(c2['mean'],(((1.0/(c2['lambda']*c2['covar_D']))*c2['mean']))) \
                             - np.dot(mean_merge,((1.0/(lambda_merge*covar_D_merge))*mean_merge)))
-    cosine_score = coefficient_term * math.exp(exponent_term)
+    
+    cosine_score = exponent_term + math.log(coefficient_term)
     return cosine_score
         
 def merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D,clusters,kmeans_labels,n_itr_clusters):
-    curr_max = 0
+    curr_max = (-1)*float("inf")
     curr_max_pair = (-1,-1)
     for i in range(n_itr_clusters):
         cluster1 = defaultdict()
@@ -42,12 +44,14 @@ def merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D
     #To merge i,j into i
     i = curr_max_pair[0]
     j = curr_max_pair[1]
-    clusters[i] = np.append(clusters[i],clusters[j])
-    clusters = np.append(clusters[:j],clusters[j+1:])
+    clusters[i] = clusters[i]+clusters[j]
+    if (j==n_itr_clusters-1):
+        clusters = clusters[:j]
+    else:
+        clusters.pop(j)
     n_itr_clusters -= 1
     kmeans_labels[kmeans_labels==j]=i
     kmeans_labels[kmeans_labels>j]-=1
-    
     return clusters,kmeans_labels,n_itr_clusters
 
 # def completeMerging(clusters,final_train_data):
