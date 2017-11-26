@@ -25,6 +25,30 @@ n_mergingIteration=Kmeans_n_clusters-n_clusters
 #
 
 # Likelihood based Merging
+
+def permute_labels(y_train, y_predict, num_clusters):   #This function computes all the permutations on cluster labels
+    label_list = []
+    for i in range(num_clusters):
+        label_list.append(i)
+
+    max_count = -1
+    final_map = ()
+    permute_label_list = list(permutations(label_list))
+    for permute_label in permute_label_list:
+        mapping = ()
+        mapping = permute_label
+
+        count_correct = 0
+
+        for i in range(y_train.shape[0]):
+            if y_train[i] == mapping[y_predict[i]]:
+                count_correct +=1
+
+        if count_correct > max_count:
+            max_count = count_correct   #max count has the max_accuracy
+            final_map = mapping         #final_map has the ideal mapping
+    return final_map
+
 def calc_likelihoodChange(cluster1,cluster2):
 	pass
 
