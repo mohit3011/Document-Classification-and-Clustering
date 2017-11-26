@@ -23,6 +23,11 @@ Kmeans_n_clusters=10
 n_EM_Update=50
 n_mergingIteration=Kmeans_n_clusters-n_clusters
 
+# For Graph-----------------------------
+# n_mergingIteration=Kmeans_n_clusters-1
+# Accuracy=[]
+# --------------------------------------
+
 def permute_labels(y_train, y_predict, num_clusters, num_clusters_pred):   #This function computes all the permutations on cluster labels
     label_list = []
     for i in range(num_clusters_pred):
@@ -46,10 +51,6 @@ def No_permute_labels(y_train, y_predict, num_clusters, num_clusters_pred):   #T
     count_correct = CalFMWIndex(y_train,y_predict,num_clusters,num_clusters_pred,n_samples)
     return count_correct
 
-def calc_likelihoodChange(cluster1,cluster2):
-	pass
-
-# To be updated
 def calc_lambda_d(std_cluster_array, n_dim_pca,n_itr_clusters):
 
     lambda_array = []
@@ -60,7 +61,6 @@ def calc_lambda_d(std_cluster_array, n_dim_pca,n_itr_clusters):
     	Zeros = np.sum(std_cluster_array[i])
         temp = std_cluster_array[i] * std_cluster_array[i]
         ans = 0
-        # pdb.set_trace()
         if (Zeros==0):
         	covariance_array.append(I)
         	lambda_array.append(0)
@@ -121,6 +121,9 @@ def create_clusters(kmeans, n_samples, n_dim_pca, n_itr_clusters, y_train):
     mean_cluster, std_cluster, prob_cluster = cal_mean_var(final_train_data,clusters,n_itr_clusters)
 
     print "k-means done"
+    # For Graph-------------------------------------------------------------------------
+    # Fmw=No_permute_labels(y_train, kmeans_labels, n_clusters, n_itr_clusters)
+    # Accuracy.append(Fmw)
 
     M=0
     while(n_itr_clusters>n_clusters):
@@ -131,16 +134,14 @@ def create_clusters(kmeans, n_samples, n_dim_pca, n_itr_clusters, y_train):
         # print "Before"
         # # One=-1
         # for i in range(n_itr_clusters):
-        # 	# if(size(clusters[i])==1):
-        # 	# 	One=clusters[i]
         # 	print size(clusters[i]),
         # print
+
         clusters_itr = np.copy(clusters)
         kmeans_labels_itr = np.copy(kmeans_labels)
         prob_cluster_itr = np.copy(prob_cluster)
         mean_cluster_itr = np.copy(mean_cluster)
         std_cluster_itr = np.copy(std_cluster)
-        # print std_cluster_itr
 
         for i in range(n_EM_Update):
             mean_cluster_copy = np.copy(mean_cluster_itr)
@@ -176,8 +177,6 @@ def create_clusters(kmeans, n_samples, n_dim_pca, n_itr_clusters, y_train):
             for j in range(n_samples):
             	clusters[updates_labels[j]].append(j)
 
-            # pdb.set_trace()
-
             RM = []
             for i in range (n_itr_clusters):
             	if(size(clusters[i])==0):
@@ -188,25 +187,19 @@ def create_clusters(kmeans, n_samples, n_dim_pca, n_itr_clusters, y_train):
             	clusters.pop(i)
             	n_itr_clusters -= 1
 
-            # pdb.set_trace()
             mean_cluster_itr, std_cluster_itr, prob_cluster_itr = cal_mean_var(final_train_data,clusters,n_itr_clusters)
-            # pdb.set_trace()
             kmeans_labels_itr = updates_labels
 
-        # print "After EM"
-        #     for i in range(n_itr_clusters):
-        #     	print size(clusters[i]),
-        #     print
         print "EM Update done"
         kmeans_labels = kmeans_labels_itr
-        # print mean_cluster_itr, std_cluster_itr, prob_cluster_itr
         lambda_array, covar_D = calc_lambda_d(std_cluster_itr,n_dim_pca,n_itr_clusters)
-        print "D & lambda Done"
         # clusters,kmeans_labels,n_itr_clusters = merge_log(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D,clusters,kmeans_labels,n_itr_clusters,n_samples,n_dim_pca)
         clusters,kmeans_labels,n_itr_clusters = merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D,clusters,kmeans_labels,n_itr_clusters,n_samples,n_dim_pca)
         mean_cluster, std_cluster, prob_cluster = cal_mean_var(final_train_data,clusters,n_itr_clusters)
         print "Merging Done"
-        # print std_cluster
+        # For Graph-------------------------------------------------------------------------
+        # Fmw=No_permute_labels(y_train, kmeans_labels, n_clusters, n_itr_clusters)
+        # Accuracy.append(Fmw)
 
     return clusters,kmeans_labels
 
@@ -222,23 +215,25 @@ if __name__ == '__main__':
     final_train_data, component_array = perform_pca(new_train_data, n_dim_pca)	#Data after pca
     print "PCA done"
 
-    # kmeans_5 = KMeans(n_clusters=n_clusters).fit(final_train_data)
-    # y_train_k = kmeans_5.labels_
-
-    # K-means
+    # K-means-------------------------------------------------------------------------------
     kmeans = KMeans(n_clusters=Kmeans_n_clusters).fit(final_train_data)
     [clusters, y_predict ] = create_clusters(kmeans, n_samples, n_dim_pca, Kmeans_n_clusters, y_train)
     [Map, FMWIndex] = permute_labels(y_train, y_predict, n_clusters, n_clusters)
     print FMWIndex
-
     # --------------------------------------------------------------------------------------
     
-    # Agglomerative
-    
+    # Agglomerative-------------------------------------------------------------------------
     # agglomerative = AgglomerativeClustering(n_clusters=Kmeans_n_clusters,affinity='euclidean').fit(final_train_data)
-    # [clusters,y_predict] = create_clusters(agglomerative, n_samples, n_dim_pca,Kmeans_n_clusters)
+    # [clusters,y_predict] = create_clusters(agglomerative, n_samples, n_dim_pca,Kmeans_n_clusters,y_train)
     # [Map, FMWIndex] = permute_labels(y_train, y_predict, n_clusters, n_clusters)
     # print FMWIndex
+    # --------------------------------------------------------------------------------------
+
+    # For Graph-------------------------------------------------------------------------
+    # i=10
+    # for idx in Accuracy:
+    # 	print idx,i
+    # 	i-=1
     # --------------------------------------------------------------------------------------
     
     
