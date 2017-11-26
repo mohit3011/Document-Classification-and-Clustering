@@ -14,22 +14,18 @@ from create_vector import *
 from collections import *
 from mergingFuntions import *
 from log_likelihood_merge import *
+from itertools import permutations
 
-n_clusters = 5
+n_clusters = 5			
 n_samples = 2225
-n_dim_pca = 100
-Kmeans_n_clusters=50
-n_EM_Update=10
+n_dim_pca = 30
+Kmeans_n_clusters=100
+n_EM_Update=200
 n_mergingIteration=Kmeans_n_clusters-n_clusters
 
-# lambda_array[i] : ith clusters lambda_i
-#
-
-# Likelihood based Merging
-
-def permute_labels(y_train, y_predict, num_clusters):   #This function computes all the permutations on cluster labels
+def permute_labels(y_train, y_predict, num_clusters, num_clusters_pred):   #This function computes all the permutations on cluster labels
     label_list = []
-    for i in range(num_clusters):
+    for i in range(num_clusters_pred):
         label_list.append(i)
 
     max_count = -1
@@ -37,19 +33,18 @@ def permute_labels(y_train, y_predict, num_clusters):   #This function computes 
     permute_label_list = list(permutations(label_list))
     for permute_label in permute_label_list:
         mapping = ()
-        mapping = permute_label
+        mapping = np.asarray(permute_label)
+        New_y_predict = mapping[y_predict]
 
-        count_correct = CalFMWIndex(y_train,mapping[y_predict],num_clusters,n_samples)
-
-        # count_correct = 0
-        # for i in range(y_train.shape[0]):
-        #     if y_train[i] == mapping[y_predict[i]]:
-        #         count_correct +=1
-
+        count_correct = CalFMWIndex(y_train,New_y_predict,num_clusters,num_clusters_pred,n_samples)
         if count_correct > max_count:
             max_count = count_correct   #max count has the max_accuracy
             final_map = mapping         #final_map has the ideal mapping
-    return final_map
+    return final_map, max_count
+
+def No_permute_labels(y_train, y_predict, num_clusters, num_clusters_pred):   #This function computes all the permutations on cluster labels
+    count_correct = CalFMWIndex(y_train,y_predict,num_clusters,num_clusters_pred,n_samples)
+    return count_correct
 
 def calc_likelihoodChange(cluster1,cluster2):
 	pass
@@ -94,8 +89,10 @@ def cal_mean_var(final_train_data, clusters,n_itr_clusters):
 
     return mean_cluster_array,std_cluster_array,np.asarray(prob_cluster)
 
-def create_clusters(kmeans, n_samples, n_dim_pca, n_itr_clusters):
+def create_clusters(kmeans, n_samples, n_dim_pca, n_itr_clusters, y_train):
     clusters = []
+    Accuracy = []
+    Map = []
     for i in range(n_itr_clusters):
         clusters.append([])
 
@@ -107,6 +104,7 @@ def create_clusters(kmeans, n_samples, n_dim_pca, n_itr_clusters):
     prob_cluster = np.zeros(n_itr_clusters)
     kmeans_labels = kmeans.labels_
     mean_cluster_array, std_cluster_array, prob_cluster = cal_mean_var(final_train_data,clusters,n_itr_clusters)
+
     print "k-means done"
 
     for M in range(n_mergingIteration):
@@ -159,15 +157,10 @@ def create_clusters(kmeans, n_samples, n_dim_pca, n_itr_clusters):
         # clusters,kmeans_labels,n_itr_clusters = merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D,clusters,kmeans_labels,n_itr_clusters,n_samples,n_dim_pca)
         mean_cluster, std_cluster, prob_cluster = cal_mean_var(final_train_data,clusters,n_itr_clusters)
         print "Merging Done"
-        # pdb.set_trace()
-    
-    return clusters
 
-
-
+    return clusters,kmeans_labels
 
 if __name__ == '__main__':
-	
 
     new_train_data, num_dim, num_samples = create_vectors()
     words = []	# List of words
@@ -178,16 +171,26 @@ if __name__ == '__main__':
     print "Data Read done"
     final_train_data, component_array = perform_pca(new_train_data, n_dim_pca)	#Data after pca
     print "PCA done"
+    kmeans_5 = KMeans(n_clusters=n_clusters).fit(final_train_data)
+    y_train_k = kmeans_5.labels_
     # K-means
     kmeans = KMeans(n_clusters=Kmeans_n_clusters).fit(final_train_data)
-    # kmeans_labels = kmeans.labels_
+    [clusters, y_predict ] = create_clusters(kmeans, n_samples, n_dim_pca, Kmeans_n_clusters, y_train_k)
+    [Map, FMWIndex] = permute_labels(y_train, y_predict, n_clusters, n_clusters)
+    print FMWIndex
     # --------------------------------------------------------------------------------------
     
     # Agglomerative
-    agglomerative = AgglomerativeClustering(n_clusters=Kmeans_n_clusters,affinity='euclidean').fit(final_train_data)
+    # agglomerative = AgglomerativeClustering(n_clusters=Kmeans_n_clusters,affinity='euclidean').fit(final_train_data)
     # agglomerative_labels = agglomerative.labels_
+    # [clusters,y_predict] = create_clusters(agglomerative, n_samples, n_dim_pca,Kmeans_n_clusters)
+
+    # agglomerative_5 = AgglomerativeClustering(n_clusters=n_clusters,affinity='euclidean').fit(final_train_data)
+    # agglomerative_labels = agglomerative_5.labels_
+    # [Map_A, FMWIndex_A] = permute_labels(agglomerative_labels, y_predict, n_clusters)
+
+    # [Map, FMWIndex] = permute_labels(y_train, y_predict, n_clusters)
+    # print FMWIndex, FMWIndex_A
     # --------------------------------------------------------------------------------------
     
-    #Clustering
-    # clusters=create_clusters(kmeans, n_samples, n_dim_pca,Kmeans_n_clusters)
-    clusters=create_clusters(agglomerative, n_samples, n_dim_pca,Kmeans_n_clusters)
+    

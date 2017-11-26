@@ -125,18 +125,22 @@ def gmdc(final_train_data, y_train, num_classes):
 
 	return y_train_pred
 
-def CalFMWIndex(y_train,y_train_pred,no_classes,no_data):
+def CalFMWIndex(y_train,y_train_pred,no_classes,no_classes_pred,no_data):
 	
-	FMWIndexMatrix = np.zeros((no_classes, no_classes))		# FMWIndexMatrix(True classes,Predicted)
+	FMWIndexMatrix = np.zeros((no_classes, no_classes_pred))		# FMWIndexMatrix(True classes,Predicted)
 	Ni = np.zeros((no_classes, ))		
-	Nj = np.zeros((no_classes, ))
+	Nj = np.zeros((no_classes_pred, ))
 
+	# pdb.set_trace()
 	for i in range(no_data):
 		FMWIndexMatrix[y_train[i],y_train_pred[i]]+=1
 
 	for i in range(no_classes):
 		Ni[i]=np.sum(FMWIndexMatrix[i,:])
-		Nj[i]=np.sum(FMWIndexMatrix[:,i])
+
+	# pdb.set_trace()
+	for j in range(no_classes_pred):
+		Nj[j]=np.sum(FMWIndexMatrix[:,j])	
 
 	Nic2=0
 	Njc2=0
@@ -144,10 +148,12 @@ def CalFMWIndex(y_train,y_train_pred,no_classes,no_data):
 
 	for i in range(no_classes):
 		Nic2+=nc2(Ni[i])
+	
+	for i in range(no_classes_pred):
 		Njc2+=nc2(Nj[i])
 	
 	for i in range(no_classes):
-		for j in range(no_classes):
+		for j in range(no_classes_pred):
 			Nijc2+=nc2(FMWIndexMatrix[i,j])
 
 	FMWIndex=Nijc2/sqrt(Nic2*Njc2)
