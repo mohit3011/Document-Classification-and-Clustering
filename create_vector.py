@@ -11,12 +11,12 @@ import matplotlib.pyplot as plt
 
 Del=0.0000000001
 
-def Transform(data, T=0):
-	if(T==0):
+def Transform(data, Type="Log"):
+	if(Type=="Identity"):
 		return data  #Identity
-	if(T==1):
+	if(Type=="Log"):
 		return np.log(data+Del)  #Log
-	if(T==2):
+	if(Type=="Sqrt"):
 		return math.sqrt(data)  #Square-Root
 
 def create_word_list():
@@ -45,20 +45,31 @@ def gmdc_bic_calc(final_train_data):
 	count_cluster = 1
 	cluster_list = []
 	bic_list = []
-	for num_clusters in range(1, 31):
+	bic_list_1 = []
+	y_list = []
+	for num_clusters in range(1, 10):
 		estimator = GaussianMixture(n_components = num_clusters, covariance_type='diag', max_iter=250)
 		estimator.fit(final_train_data)
 		cluster_list.append(count_cluster)
 		count_cluster += 1
 		bic_list.append(estimator.bic(final_train_data))
+		bic_list_1.append(estimator.bic(final_train_data)+20000000)
 
-	draw_graph(cluster_list, bic_list, "r", "Number of Clusters", "BIC Values")
+	y_list.append(bic_list)	
+	y_list.append(bic_list_1)
+	draw_graph(cluster_list, y_list, "Number of Clusters", "BIC Values")
+	plt.show()
 		
 
-def draw_graph(x_val, y_val, color, x_label, y_label):
+def draw_graph(x_val, y_list, x_label, y_label):
 
-	lines = plt.plot(x_val, y_val)
-	plt.setp(lines, color = color, linewidth=2.0)
+	color_list = ["r", "b", "g"]
+	count = 0
+	#print len(y_list)
+	for y_val in y_list:
+		#print y_val
+		plt.plot(x_val, y_val, color = color_list[count], linewidth=2.0)
+		count += 1
 	plt.ylabel(y_label)
 	plt.xlabel(x_label)
 	plt.show()
@@ -80,34 +91,52 @@ def create_classes():
 
 	return np.asarray(classes)
 
-def create_weight_matrix(num_dim, num_samples, train_data):
-
-	prob_matrix = np.zeros((num_samples, num_dim))
+def create_weight_matrix(num_dim, num_samples, train_data, Type="Entropy"):
 
 	weight_matrix = np.zeros((num_dim))
 
-	for j in range(num_dim):
-		prob_matrix[:,j] = np.copy(train_data[:,j]/np.sum(train_data[:,j]))
+	if Type=="Entropy":
+		prob_matrix = np.zeros((num_samples, num_dim))
+		for j in range(num_dim):
+			prob_matrix[:,j] = np.copy(train_data[:,j]/np.sum(train_data[:,j]))
 
-	for j in range(num_dim):
+		for j in range(num_dim):
 
-		tmp = np.copy(prob_matrix[:,j]*np.log(prob_matrix[:,j]+Del))
-		weight_matrix[j] = 1+np.sum(tmp)/np.log(num_samples)
+			tmp = np.copy(prob_matrix[:,j]*np.log(prob_matrix[:,j]+Del))
+			weight_matrix[j] = 1+np.sum(tmp)/np.log(num_samples)
+
+	if Type=="Identity":
+		for j in range(num_dim):
+			weight_matrix[j] = 1
+
+	if Type=="Normal":
+		for j in range(num_dim):
+			weight_matrix[j] = 1/math.sqrt(np.sum(train_data[:,j]**2))
+
+	if Type=="Gfldf":
+		for j in range(num_dim):
+			temp = np.copy(train_data[:,j])
+			for k in range(num_samples):
+				if temp[k]>0:
+					temp[k] = 1
+
+			weight_matrix[j] = np.sum(train_data[:,j])/np.sum(temp)
+
 
 	return weight_matrix
 
-def create_normalized_data(num_dim, num_samples, train_data):
+def create_normalized_data(num_dim, num_samples, train_data, Type_weight="Entropy", Type_transform="Log"):
 
 	new_train_data = np.zeros((num_samples, num_dim))	# Final data matrix
 
-	weight_matrix = create_weight_matrix(num_dim, num_samples, train_data)
+	weight_matrix = create_weight_matrix(num_dim, num_samples, train_data, Type_weight)
 
 	for i in range(num_samples):
 
 		WordSum=0
 		for j in range(num_dim):
 
-			new_train_data[i,j] = weight_matrix[j]*Transform(train_data[i,j])
+			new_train_data[i,j] = weight_matrix[j]*Transform(train_data[i,j], Type_transform)
 
 			WordSum+=new_train_data[i,j]*new_train_data[i,j]
 
@@ -164,7 +193,7 @@ def nc2(n):
 	ans=n*(n-1)/2.0
 	return ans
 
-def create_vectors():
+def create_vectors(Type_weight="Entropy", Type_transform="Log"):
 	file_bbc_mtx = open("bbc/bbc.mtx", "r")
 
 	count_row = 0
@@ -182,7 +211,7 @@ def create_vectors():
 
 		count_row += 1
 
-	new_train_data = create_normalized_data(num_dim, num_samples, train_data)
+	new_train_data = create_normalized_data(num_dim, num_samples, train_data, Type_weight, Type_transform)
 
 	return new_train_data, num_dim, num_samples
 
@@ -204,4 +233,4 @@ if __name__ == '__main__':
 
 	FMWIndex=CalFMWIndex(y_train,y_train_pred,num_classes,num_samples)
 	# print FMWIndex
-	#gmdc_bic_calc(final_train_data)
+	gmdc_bic_calc(final_train_data)
