@@ -181,16 +181,11 @@ if __name__ == '__main__':
     # --------------------------------------------------------------------------------------
     
     # Agglomerative
+    
     # agglomerative = AgglomerativeClustering(n_clusters=Kmeans_n_clusters,affinity='euclidean').fit(final_train_data)
-    # agglomerative_labels = agglomerative.labels_
     # [clusters,y_predict] = create_clusters(agglomerative, n_samples, n_dim_pca,Kmeans_n_clusters)
-
-    # agglomerative_5 = AgglomerativeClustering(n_clusters=n_clusters,affinity='euclidean').fit(final_train_data)
-    # agglomerative_labels = agglomerative_5.labels_
-    # [Map_A, FMWIndex_A] = permute_labels(agglomerative_labels, y_predict, n_clusters)
-
-    # [Map, FMWIndex] = permute_labels(y_train, y_predict, n_clusters)
-    # print FMWIndex, FMWIndex_A
+    # [Map, FMWIndex] = permute_labels(y_train, y_predict, n_clusters, n_clusters)
+    # print FMWIndex
     # --------------------------------------------------------------------------------------
     
     
