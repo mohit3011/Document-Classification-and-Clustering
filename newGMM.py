@@ -8,11 +8,12 @@ import random as rand
 from numpy import *
 from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans,AgglomerativeClustering
 from scipy.stats import norm
 from create_vector import *
 from collections import *
 from mergingFuntions import *
+from log_likelihood_merge import *
 
 n_clusters = 5
 n_samples = 2225
@@ -154,7 +155,8 @@ def create_clusters(kmeans, n_samples, n_dim_pca, n_itr_clusters):
         # print mean_cluster_itr, std_cluster_itr, prob_cluster_itr
         lambda_array, covar_D = calc_lambda_d(std_cluster_itr,n_dim_pca,n_itr_clusters)
         print "D & lambda Done"
-        clusters,kmeans_labels,n_itr_clusters = merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D,clusters,kmeans_labels,n_itr_clusters)
+        clusters,kmeans_labels,n_itr_clusters = merge_log(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D,clusters,kmeans_labels,n_itr_clusters,n_samples,n_dim_pca)
+        # clusters,kmeans_labels,n_itr_clusters = merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D,clusters,kmeans_labels,n_itr_clusters,n_samples,n_dim_pca)
         mean_cluster, std_cluster, prob_cluster = cal_mean_var(final_train_data,clusters,n_itr_clusters)
         print "Merging Done"
         # pdb.set_trace()
@@ -176,6 +178,16 @@ if __name__ == '__main__':
     print "Data Read done"
     final_train_data, component_array = perform_pca(new_train_data, n_dim_pca)	#Data after pca
     print "PCA done"
-    kmeans = KMeans(n_clusters=Kmeans_n_clusters).fit(final_train_data)	#k-means clustering
+    # K-means
+    kmeans = KMeans(n_clusters=Kmeans_n_clusters).fit(final_train_data)
     # kmeans_labels = kmeans.labels_
-    clusters=create_clusters(kmeans, n_samples, n_dim_pca,Kmeans_n_clusters)
+    # --------------------------------------------------------------------------------------
+    
+    # Agglomerative
+    agglomerative = AgglomerativeClustering(n_clusters=Kmeans_n_clusters,affinity='euclidean').fit(final_train_data)
+    # agglomerative_labels = agglomerative.labels_
+    # --------------------------------------------------------------------------------------
+    
+    #Clustering
+    # clusters=create_clusters(kmeans, n_samples, n_dim_pca,Kmeans_n_clusters)
+    clusters=create_clusters(agglomerative, n_samples, n_dim_pca,Kmeans_n_clusters)

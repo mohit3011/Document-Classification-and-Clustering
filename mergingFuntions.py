@@ -1,9 +1,19 @@
-from newGMM import *
-import pdb
-import warnings
+import sys, os
+import copy
+import math
+import math
+import numpy as np
+import pandas as pd
+import random as rand
+from numpy import *
+from sklearn.decomposition import PCA
+from sklearn.mixture import GaussianMixture
+from sklearn.cluster import KMeans
+from scipy.stats import norm
+from create_vector import *
+from collections import *
 
-def calc_cosine(c1,c2):
-    global n_dim_pca
+def calc_cosine(c1,c2,n_dim_pca):
     Q=np.log(c1['lambda']*c1['covar_D'] + c2['lambda']*c2['covar_D'])
     logDet=np.sum(Q)
     Logdeterminant_l_D=logDet*(1.0/n_dim_pca)
@@ -21,13 +31,12 @@ def calc_cosine(c1,c2):
                             + np.dot(c2['mean'],(((1.0/(c2['lambda']*c2['covar_D']))*c2['mean']))) \
                             - np.dot(mean_merge,((1.0/(lambda_merge*covar_D_merge))*mean_merge)))
     
-    # warnings.filterwarnings('error')
     if (flag):
         pdb.set_trace()
     cosine_score = exponent_term + coefficient_term
     return cosine_score
         
-def merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D,clusters,kmeans_labels,n_itr_clusters):
+def merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D,clusters,kmeans_labels,n_itr_clusters,n_samples,n_dim_pca):
     curr_max = (-1)*float("inf")
     curr_max_pair = (-1,-1)
     for i in range(n_itr_clusters):
@@ -46,7 +55,7 @@ def merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D
             cluster2['lambda'] = lambda_array[j]
             cluster2['covar_D'] = covar_D[j]
 
-            cosine_distance = calc_cosine(cluster1,cluster2)
+            cosine_distance = calc_cosine(cluster1,cluster2,n_dim_pca)
             if(cosine_distance >= curr_max):
                 curr_max = cosine_distance
                 curr_max_pair = (i,j)
@@ -63,13 +72,3 @@ def merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D
     kmeans_labels[kmeans_labels==j]=i
     kmeans_labels[kmeans_labels>j]-=1
     return clusters,kmeans_labels,n_itr_clusters
-
-# def completeMerging(clusters,final_train_data):
-#     global n_dim_pca
-#     for i in range(n_mergingIteration):
-#         mean_cluster_itr, std_cluster_itr, prob_cluster_itr = cal_mean_var(final_train_data,clusters,n_itr_clusters)
-#         lambda_array, covar_D = calc_lambda_d(std_cluster_itr,n_itr_clusters)
-#         clusters = merge(mean_cluster_itr,std_cluster_itr,prob_cluster_itr,lambda_array,covar_D,clusters)
-#         clusters=create_clusters(kmeans, num_samples)
-#         print "EM Update done"
-#     return clusters
